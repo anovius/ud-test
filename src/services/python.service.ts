@@ -1,8 +1,6 @@
 import axios from "axios";
 let URL = 'https://api.undetectable.ai/'
 
-//set up api-key and content-type in axios header
-
 axios.defaults.headers.common['api-key'] = 'API_KEY';
 axios.defaults.headers.post['Content-Type'] = 'application/json';
 
