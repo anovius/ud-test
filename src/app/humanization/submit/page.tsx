@@ -1,6 +1,6 @@
 'use client'
-import React, { createRef, useState } from 'react';
-import { Select, Button, Input, Form, Col, Row, notification, FormInstance } from 'antd';
+import React, { useEffect, useRef, useState } from 'react';
+import { Select, Button, Input, Form, Col, Row, notification, FormInstance, Skeleton } from 'antd';
 import { OptionType } from '@/models/Option';
 import { SubmitDocumentBody } from '@/models/ReuestBody';
 import pythonService from '@/services/python.service';
@@ -9,7 +9,8 @@ const { Option } = Select;
 export default function Humanization() {
 
   const [loading, setLoading] = useState(false);
-  const formRef = createRef<FormInstance>();
+  const [humanizedText, setHumanizedText] = useState<string>('');
+  const formRef = useRef<FormInstance>(null);
   
   const readabilityOptions: OptionType[] = [
     { label: 'High School', value: 'High School' },
@@ -36,9 +37,35 @@ export default function Humanization() {
     { label: 'Balanced', value: 'Balanced' },
     { label: 'Quality', value: 'Quality' },
     { label: 'More Human', value: 'More Human' }
-  ]; 
+  ];
+  
+  const fetchResults = async (id: string) => {
+    console.log('fetching results for id', id);
+    try{
+      let res = await pythonService.retrieveDocument(id);
+      if(res.status === 'done'){
+        setHumanizedText(res.output);
+        setLoading(false);
+      }
+      else{
+        setTimeout(() => {
+          fetchResults(id);
+        }, 30000)
+      }
+    }
+    catch (e: any) {
+      console.log(e);
+      notification.error({
+        message: 'An Error Occurred',
+        description: `${e.response.data.status}`,
+        placement: 'topRight'
+      });
+      setLoading(false);
+    }
+  };
 
   const onFinish = async (values: any) => {
+
     setLoading(true);
     const body: SubmitDocumentBody = {
       content: values.content,
@@ -54,18 +81,22 @@ export default function Humanization() {
         description: `Your document has been submitted successfully`,
         placement: 'topRight'
       });
+      setTimeout(() => {
+        fetchResults(res.id);
+      }, 30000)
     }
-    catch (e) {
+    catch (e: any) {
       console.log(e);
       notification.error({
         message: 'An Error Occurred',
-        description: `There was an error processing your request`,
+        description: `${e.response.data.status}`,
         placement: 'topRight'
       });
+      setLoading(false);
     }
-
-    formRef.current?.resetFields();
-    setLoading(false);
+    finally {
+      formRef.current?.resetFields();
+    }
   };
 
   return (
@@ -128,6 +159,25 @@ export default function Humanization() {
           </Form.Item>
         </Col>
       </Row>
+      {loading ? (
+        <Row justify="center">
+          <Col>
+            <Skeleton active paragraph={{ rows: 2 }} />
+            <div style={{ textAlign: 'center', margin: '20px' }}>
+              Generating results...
+            </div>
+          </Col>
+        </Row>
+      ) : (
+        <Row justify="center">
+          {humanizedText !== ''&& <Col>
+            <div style={{width: '100%' }}>
+              <b>Humanized Text</b>
+              <p style={{ textAlign:  'center' }}>{humanizedText}</p>
+            </div>
+          </Col>}
+        </Row>
+      )}
     </Form>
     </Row>
   );

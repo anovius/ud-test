@@ -12,12 +12,12 @@ const submitDocument = async (body: SubmitDocumentBody) => {
 }
 
 const retrieveDocument = async (id: String) => {
-    const response = await axios.get(URL + 'document', { params: { id } });
+    const response = await axios.post(URL + 'document', {id});
     return response.data;
 }
 
-const listDocuments = async (page: Number) => {
-    const response = await axios.get(URL + 'list', { params: { page } });
+const listDocuments = async (page: string) => {
+    const response = await axios.post(URL + 'list', { page });
     return response.data;
 }
 
